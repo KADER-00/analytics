@@ -1,0 +1,32 @@
+{
+  "admin": {
+    "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "email": "admin@analysepme.com",
+    "role": "admin"
+  },
+  "demo": {
+    "password": "d3ad9315b7be5dd53b31a273b3b3aba5defe700808305aa16a3062b76658a791",
+    "email": "demo@analysepme.com",
+    "role": "user"
+  },
+  "amzo": {
+    "password": "3c6147590b62db5a114d805f4699f91d63e24afefb554b1c9ff1a59d89488306",
+    "email": "sow2002am@gmail.com",
+    "role": "user"
+  },
+  "yaya": {
+    "password": "dfdf07485f3b275844b75d93ab611c814c7a615fe35001a1c649de9e85fc5a65",
+    "email": "ami@gmail.com",
+    "role": "user"
+  },
+  "kouadio": {
+    "password": "bb02a3a45af360551d606bd704d426f538af6384a811874e731c22ebe8db4711",
+    "email": "kkaderkouadio@gmail.com",
+    "role": "user"
+  },
+  "KOUADIO KADER": {
+    "password": "f61c4a7e119b084638b25f2f0cccb3e9b1be96307a31eec4fc723d7d400bada2",
+    "email": "kaderkouadio@komafinconsultaing.com",
+    "role": "user"
+  }
+}
