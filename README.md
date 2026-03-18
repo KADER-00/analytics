@@ -22,10 +22,16 @@ Une application Streamlit complète pour l'analyse de données des petites et mo
 
 1. **Cloner ou télécharger le projet**
 
-   ```bash
-   git clone <url-du-projet>
-   cd analyse-pme
-   ```
+
+---
+
+## ⚙️ Installation
+
+### 1️⃣ Cloner le projet
+
+```bash
+git clone https://github.com/KADER-00/analytics.git
+cd analytics
 
 2. **Installer les dépendances**
 

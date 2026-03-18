@@ -417,20 +417,20 @@ def show_login_form():
                  else:
                      st.warning("⚠️ Veuillez remplir tous les champs")
          
-         # Informations de démonstration
-         st.markdown("""
-         <div class="demo-info">
-             <h4>🎯 Comptes de démonstration</h4>
-             <div class="demo-account">
-                 <strong>Administrateur:</strong><br>
-                 Utilisateur: admin | Mot de passe: admin123
-             </div>
-             <div class="demo-account">
-                 <strong>Utilisateur demo:</strong><br>
-                 Utilisateur: demo | Mot de passe: demo123
-             </div>
-         </div>
-         """, unsafe_allow_html=True)
+        #  # Informations de démonstration
+        #  st.markdown("""
+        #  <div class="demo-info">
+        #      <h4>🎯 Comptes de démonstration</h4>
+        #      <div class="demo-account">
+        #          <strong>Administrateur:</strong><br>
+        #          Utilisateur: admin | Mot de passe: admin123
+        #      </div>
+        #      <div class="demo-account">
+        #          <strong>Utilisateur demo:</strong><br>
+        #          Utilisateur: demo | Mot de passe: demo123
+        #      </div>
+        #  </div>
+        #  """, unsafe_allow_html=True)
 
     with tab2:
          with st.form("register_form"):
