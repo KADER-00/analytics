@@ -87,21 +87,32 @@ def show_import_page():
 
                 # --- Section de configuration du nettoyage ---
                 st.markdown("### ⚙️ Configurez le Nettoyage")
-                with st.expander("Afficher les options de nettoyage", expanded=True):
+                with st.expander("🔧 Options avancées de nettoyage", expanded=True):
                     col1, col2 = st.columns(2)
                     with col1:
                         missing_strategy = st.selectbox(
                             "Stratégie pour les valeurs manquantes :", 
-                            ['auto', 'remove_row', 'none'], 
+                            ['imputation_auto', 'supprimer_lignes', 'aucune'], 
                             index=0,
-                            help="Auto: remplace intelligemment (médiane/mode). Remove: supprime les lignes concernées. None: ne fait rien."
-                        )
+                            help="""
+                               - imputation_auto : remplace automatiquement (médiane pour numérique, mode pour catégoriel)
+                               - supprimer_lignes : supprime les lignes contenant des valeurs manquantes
+                               - aucune : ne fait aucune modification
+                                 """
+                                 )
+                            # help="Auto: remplace intelligemment (médiane/mode). Remove: supprime les lignes concernées. None: ne fait rien."
+                        # )
                     with col2:
                         outlier_strategy = st.selectbox(
                             "Stratégie pour les valeurs aberrantes :", 
-                            ['flag', 'cap', 'remove', 'none'],
+                            ['signaler', 'plafonner', 'supprimer', 'aucune'],
                             index=0,
-                            help="Flag: marque sans modifier. Cap: plafonne à la limite. Remove: supprime la ligne. None: ne fait rien."
+                            help="""
+                              - signaler : identifie les valeurs aberrantes sans modifier les données
+                              - plafonner : limite les valeurs extrêmes (winsorisation)
+                              - supprimer : supprime les lignes contenant des valeurs aberrantes
+                              - aucune : ne fait aucune modification
+                             """
                         )
 
                 # --- Bouton pour lancer le nettoyage ---

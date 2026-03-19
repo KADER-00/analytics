@@ -15,13 +15,33 @@ PLOTLY_CONFIG = {
         'title': {'x': 0.5, 'font': {'size': 18}},
     }
 }
+# def get_numeric_columns(df):
+#     numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+#     return [col for col in numeric_cols if not col.endswith('_outlier')]
 
-def get_numeric_columns(df):
-    numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
-    return [col for col in numeric_cols if not col.endswith('_outlier')]
+# def get_categorical_columns(df):
+#     return df.select_dtypes(include=['object', 'category']).columns.tolist()
+def get_colonnes_numeriques(df):
+    """
+    Retourne la liste des colonnes numériques du DataFrame,
+    en excluant les colonnes techniques (ex : valeurs aberrantes).
+    """
+    colonnes_numeriques = df.select_dtypes(include='number').columns
 
-def get_categorical_columns(df):
-    return df.select_dtypes(include=['object', 'category']).columns.tolist()
+    return [
+        col for col in colonnes_numeriques
+        if not col.endswith('_valeur_aberrante')
+    ]
+def get_colonnes_categorielles(df):
+    """
+    Retourne la liste des colonnes catégorielles (texte)
+    du DataFrame.
+    """
+    colonnes_categorielles = df.select_dtypes(
+        include=['object', 'string', 'category']
+    ).columns.tolist()
+
+    return colonnes_categorielles
 
 # --- NOUVELLE FONCTION POUR LE DASHBOARD KPI ---
 
@@ -35,44 +55,88 @@ def create_kpi_dashboard(df, numeric_cols, all_cols):
         "Définissez ici vos propres KPIs ! Choisissez les colonnes qui représentent vos métriques principales, "
         "vos dimensions d'analyse et l'axe temporel pour visualiser la performance."
     )
-
     # Création d'un formulaire pour les sélections
     with st.form("kpi_form"):
         st.markdown("**Configurez vos indicateurs :**")
         col1, col2, col3 = st.columns(3)
+        # with col1:
+        #     # Colonne pour les calculs principaux (somme, moyenne)
+        #     metric_col = st.selectbox("Choisissez votre métrique principale (numérique) :", [None] + numeric_cols)
+        # with col2:
+        #     # Colonne pour l'analyse temporelle
+        #     date_col = st.selectbox("Choisissez votre colonne de date :", [None] + all_cols)
+        # with col3:
         with col1:
-            # Colonne pour les calculs principaux (somme, moyenne)
-            metric_col = st.selectbox("Choisissez votre métrique principale (numérique) :", [None] + numeric_cols)
+             # Colonne pour les métriques principales
+            metric_col = st.selectbox(
+            "📈 Métrique principale (colonne numérique)",
+             ["Aucune"] + numeric_cols,
+            help="Sélectionnez la variable numérique à analyser (ex : chiffre d’affaires, montant, quantité)."
+            )
         with col2:
             # Colonne pour l'analyse temporelle
-            date_col = st.selectbox("Choisissez votre colonne de date :", [None] + all_cols)
+            date_col = df.select_dtypes(include=['datetime64[ns]', 'datetime']).columns.tolist()
+            date_col = st.selectbox(
+               "📅 Dimension temporelle",
+               ["Aucune"] + all_cols +date_col,
+            help="Sélectionnez une colonne de type date pour analyser l’évolution dans le temps."
+            )
+            # Gestion des valeurs "Aucune"
+        if metric_col == "Aucune":
+           metric_col = None
+
+        if date_col == "Aucune":
+           date_col = None
+
         with col3:
             # Colonne pour compter des entités uniques (clients, produits...)
-            dimension_col = st.selectbox("Choisissez une dimension à compter :", [None] + all_cols)
-        
+            # dimension_col = st.selectbox("Choisissez une dimension à compter :", [None] + all_cols)
+            dimension_col = st.selectbox(
+           "📊 Dimension d'analyse (facultatif)",
+            ["Aucune"] + all_cols,
+            help="Permet de segmenter les données (ex : région, produit, catégorie)."
+            )
+        if dimension_col == "Aucune":
+                dimension_col = None
         submitted = st.form_submit_button("Générer les KPIs")
 
     if not submitted:
         st.write("Veuillez configurer et soumettre le formulaire pour voir vos KPIs.")
         return
-
     st.divider()
-    
     # Affichage des KPIs dans des colonnes
-    kpi_cols = st.columns(3)
-    
-    # KPI 1: Total et Moyenne de la métrique
+    kpi_cols = st.columns(3)   
+    # # KPI 1: Total et Moyenne de la métrique
+    # if metric_col:
+    #     total_metric = df[metric_col].sum()
+    #     mean_metric = df[metric_col].mean()
+    #     kpi_cols[0].metric(f"Total de {metric_col}", f"{total_metric:,.2f}")
+    #     kpi_cols[0].metric(f"Moyenne de {metric_col}", f"{mean_metric:,.2f}")
+    # KPI 1 : Total et moyenne de la métrique sélectionnée
     if metric_col:
         total_metric = df[metric_col].sum()
         mean_metric = df[metric_col].mean()
-        kpi_cols[0].metric(f"Total de {metric_col}", f"{total_metric:,.2f}")
-        kpi_cols[0].metric(f"Moyenne de {metric_col}", f"{mean_metric:,.2f}")
-
-    # KPI 2: Comptage d'éléments uniques
+        nom_metric = metric_col.replace("_", " ").capitalize()
+        kpi_cols[0].metric(
+            label=f"💰 Total {nom_metric}",
+            value=f"{total_metric:,.2f}"
+        )
+        kpi_cols[1].metric(
+            label=f"📊 Moyenne {nom_metric}",
+            value=f"{mean_metric:,.2f}"
+        )
+    # # KPI 2: Comptage d'éléments uniques
+    # if dimension_col:
+    #     unique_count = df[dimension_col].nunique()
+    #     kpi_cols[1].metric(f"Nombre de '{dimension_col}' uniques", f"{unique_count:,}")
+    # KPI 2 : Nombre d’éléments uniques (dimension)
     if dimension_col:
         unique_count = df[dimension_col].nunique()
-        kpi_cols[1].metric(f"Nombre de '{dimension_col}' uniques", f"{unique_count:,}")
-
+        nom_dimension = dimension_col.replace("_", " ").capitalize()
+        kpi_cols[2].metric(
+            label=f"🧩 Nombre de {nom_dimension} uniques",
+            value=f"{unique_count:,}"
+        )
     # KPI 3 & Graphique: Analyse temporelle
     if date_col and metric_col:
         try:
@@ -86,21 +150,17 @@ def create_kpi_dashboard(df, numeric_cols, all_cols):
             mid_point = len(temp_df) // 2
             first_half_sum = temp_df[metric_col].iloc[:mid_point].sum()
             second_half_sum = temp_df[metric_col].iloc[mid_point:].sum()
-            
             delta = 0
             if first_half_sum > 0:
                 delta = ((second_half_sum - first_half_sum) / first_half_sum) * 100
-
             kpi_cols[2].metric(
                 f"Tendance de {metric_col}",
                 f"{second_half_sum:,.2f} (2e moitié)",
                 f"{delta:.2f}% vs 1re moitié"
             )
-
             # Graphique d'évolution temporelle
             st.markdown(f"#### Évolution de **{metric_col}** dans le temps")
             resampled_df = temp_df.resample('D').sum().reset_index() # Agréger par jour
-            
             fig_time = px.area(
                 resampled_df,
                 x=date_col,
@@ -116,38 +176,109 @@ def create_kpi_dashboard(df, numeric_cols, all_cols):
             
 # --- FONCTIONS DE VISUALISATION (Adaptées) ---
 
-def create_dashboard_overview(df):
-    st.markdown("### 🔎 Vue d'Ensemble du Dataset")
-    st.write("Cette section vous donne un résumé de haut niveau de vos données. Idéal pour un premier diagnostic.")
+# def create_dashboard_overview(df):
+#     st.markdown("### 🔎 Vue d'Ensemble du Dataset")
+#     st.write("Cette section vous donne un résumé de haut niveau de vos données. Idéal pour un premier diagnostic.")
 
-    # Section renommée : "Informations sur le Dataset"
-    st.markdown("##### Informations sur le Dataset")
-    completeness = (1 - df.isnull().sum().sum() / df.size) * 100
-    duplicates = df.duplicated().sum()
+#     # Section renommée : "Informations sur le Dataset"
+#     st.markdown("##### Informations sur le Dataset")
+#     completeness = (1 - df.isnull().sum().sum() / df.size) * 100
+#     duplicates = df.duplicated().sum()
     
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("📝 Lignes", f"{len(df):,}")
-    col2.metric("📏 Colonnes", len(df.columns))
-    col3.metric("✅ Complétude", f"{completeness:.1f}%", help="Pourcentage de cellules non-vides.")
-    col4.metric("🔗 Doublons", f"{duplicates:,}", help="Nombre de lignes entièrement identiques.")
+#     col1, col2, col3, col4 = st.columns(4)
+#     col1.metric("📝 Lignes", f"{len(df):,}")
+#     col2.metric("📏 Colonnes", len(df.columns))
+#     col3.metric("✅ Complétude", f"{completeness:.1f}%", help="Pourcentage de cellules non-vides.")
+#     col4.metric("🔗 Doublons", f"{duplicates:,}", help="Nombre de lignes entièrement identiques.")
 
+def create_dashboard_overview(df):
+    st.markdown("### 🔎 Vue d’ensemble du jeu de données")
+    st.caption("Résumé global pour un diagnostic rapide de la qualité et de la structure des données.")
+    # --- Indicateurs principaux ---
+    st.markdown("#### 📌 Informations générales")
+    nb_lignes = len(df)
+    nb_colonnes = len(df.columns)
+    nb_cellules = df.size
+    nb_valeurs_manquantes = df.isnull().sum().sum()
+    taux_completude = (1 - nb_valeurs_manquantes / nb_cellules) * 100
+    nombre_doublons = df.duplicated().sum()
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric(
+        "📝 Nombre de lignes",
+        f"{nb_lignes:,}"
+    )
+    col2.metric(
+        "📏 Nombre de colonnes",
+        f"{nb_colonnes}"
+    )
+    col3.metric(
+        "✅ Taux de complétude",
+        f"{taux_completude:.1f}%",
+        help="Pourcentage de valeurs non manquantes dans le dataset."
+    )
+    col4.metric(
+        "🔗 Lignes dupliquées",
+        f"{nombre_doublons:,}",
+        help="Nombre de lignes strictement identiques."
+    )
     st.divider()
     # Le reste de la fonction est inchangé...
     col1, col2 = st.columns([1, 2])
+    # with col1:
+    #     # ...
+    #     st.markdown("##### Répartition des Types de Données")
+    #     type_counts = df.dtypes.astype(str).value_counts()
+    #     fig_types = px.pie(
+    #         values=type_counts.values,
+    #         names=type_counts.index,
+    #         title="Types de variables",
+    #         hole=0.4,
+    #         color_discrete_sequence=px.colors.qualitative.Pastel
+    #     )
+    #     fig_types.update_layout(**PLOTLY_CONFIG['layout'], showlegend=False)
+    #     fig_types.update_traces(textinfo='percent+label', textposition='inside')
+    #     st.plotly_chart(fig_types, use_container_width=True)
+
     with col1:
-        # ...
-        st.markdown("##### Répartition des Types de Données")
+        st.markdown("##### 🧩 Répartition des types de données")
+        # 1️⃣ Calcul des types
         type_counts = df.dtypes.astype(str).value_counts()
+        # 2️⃣ Mapping des types (FR)
+        mapping_types = {
+            'int64': 'Entier',
+            'int32': 'Entier',
+            'Int64': 'Entier',
+            'float64': 'Numérique',
+            'float32': 'Numérique',
+            'object': 'Texte',
+            'string': 'Texte',
+            'category': 'Catégoriel',   
+            'bool': 'Booléen',
+            'datetime64[ns]': 'Date'
+        }
+        type_counts.index = type_counts.index.map(lambda x: mapping_types.get(x, x))
+        # 3️⃣ Nettoyage du layout (🔥 important)
+        layout_config = PLOTLY_CONFIG.get('layout', {}).copy()
+        layout_config.pop('title', None)
+        # 4️⃣ Graphique
         fig_types = px.pie(
             values=type_counts.values,
             names=type_counts.index,
-            title="Types de variables",
-            hole=0.4,
+            hole=0.5,
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
-        fig_types.update_layout(**PLOTLY_CONFIG['layout'], showlegend=False)
-        fig_types.update_traces(textinfo='percent+label', textposition='inside')
+        fig_types.update_layout(
+            title="Répartition des types de variables",
+            **layout_config,
+            showlegend=True
+        )
+        fig_types.update_traces(
+            textinfo='percent+label',
+            textposition='inside',
+            hovertemplate="<b>%{label}</b><br>Nombre: %{value}<br>Part: %{percent}"
+        )
         st.plotly_chart(fig_types, use_container_width=True)
+
     with col2:
         # ...
         st.markdown("##### Analyse des Valeurs Manquantes")
@@ -168,10 +299,10 @@ def create_dashboard_overview(df):
         else:
             st.success("✅ Félicitations ! Aucune valeur manquante détectée.")
     with st.expander("💡 Insights et Recommandations"):
-        if completeness < 85:
+        if taux_completude < 85:
             st.warning("⚠️ **Action Requise :** La complétude est faible. Envisagez des techniques d'imputation (moyenne, médiane) ou de suppression des lignes/colonnes avec trop de valeurs manquantes.")
-        if duplicates > 0:
-            st.info(f"ℹ️ **Information :** {duplicates} doublons trouvés. Pensez à les supprimer pour éviter les biais dans vos analyses.")
+        if nombre_doublons > 0:
+            st.info(f"ℹ️ **Information :** {nombre_doublons} doublons trouvés. Pensez à les supprimer pour éviter les biais dans vos analyses.")
         st.success("🎯 **Prochaine Étape :** Explorez l'onglet 'Analyse Univariée' pour comprendre la distribution de chaque variable individuellement.")
 
 
@@ -179,7 +310,9 @@ def create_univariate_analysis(df, numeric_cols, cat_cols):
     # Cette fonction reste inchangée
     st.markdown("### 📊 Analyse Univariée (une variable à la fois)")
     st.write("Explorez ici chaque variable pour comprendre sa distribution, sa tendance centrale et sa dispersion.")
-    st.markdown("#### Distribution des Variables Numériques")
+    # st.markdown("#### Distribution des Variables Numériques")
+    st.markdown("#### 📊 Répartition des variables numériques")
+    st.caption("Analyse de la distribution des valeurs numériques (histogrammes, dispersion, etc.).")
     if not numeric_cols:
         st.warning("Aucune variable numérique détectée.") 
     else:
@@ -192,7 +325,8 @@ def create_univariate_analysis(df, numeric_cols, cat_cols):
         st.plotly_chart(fig, use_container_width=True)
         st.dataframe(df[selected_numeric].describe().to_frame().T, use_container_width=True)
     st.divider()
-    st.markdown("#### Distribution des Variables Catégorielles")
+    st.markdown("#### 📊 Répartition des variables catégorielles")
+    st.caption("Visualisation des fréquences des différentes catégories présentes dans vos données.")
     if not cat_cols:
         st.warning("Aucune variable catégorielle détectée.")
     else:
@@ -259,8 +393,11 @@ def create_visualizations(df):
         if df[col].nunique() / len(df) < 0.1 and df[col].nunique() < 50:
             df[col] = df[col].astype('category')
             
-    numeric_columns = get_numeric_columns(df)
-    categorical_columns = get_categorical_columns(df)
+    # numeric_columns = get_numeric_columns(df)
+    # categorical_columns = get_categorical_columns(df)
+
+    numeric_columns = get_colonnes_numeriques(df)
+    categorical_columns = get_colonnes_categorielles(df)
     all_columns = df.columns.tolist() # Pour le sélecteur de date
 
     # Nouvelle structure avec l'onglet KPI

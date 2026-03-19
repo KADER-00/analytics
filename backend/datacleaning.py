@@ -25,9 +25,9 @@ def load_file(uploaded_file):
         return None
 
 def clean_data(df, 
-               missing_value_strategy='auto', 
+               missing_value_strategy='imputation_auto', 
                missing_col_threshold=0.8, 
-               outlier_strategy='flag',
+               outlier_strategy='signaler',
                outlier_method='iqr', 
                iqr_multiplier=1.5):
     """
@@ -125,7 +125,7 @@ def clean_data(df,
 
     # --- 7. Gestion des Valeurs Aberrantes (Outliers) ---
     numeric_cols_for_outliers = cleaned_df.select_dtypes(include=np.number).columns
-    if outlier_strategy != 'none' and outlier_method == 'iqr':
+    if outlier_strategy != 'aucune' and outlier_method == 'iqr':
         for column in numeric_cols_for_outliers:
             Q1 = cleaned_df[column].quantile(0.25)
             Q3 = cleaned_df[column].quantile(0.75)
@@ -136,25 +136,25 @@ def clean_data(df,
             outliers = (cleaned_df[column] < lower_bound) | (cleaned_df[column] > upper_bound)
             
             if outliers.sum() > 0:
-                if outlier_strategy == 'flag':
-                    cleaned_df[f'{column}_outlier'] = outliers
+                if outlier_strategy == 'signaler':
+                    cleaned_df[f'{column}out_valeur_aberrantelier'] = outliers
                     cleaning_log.append(f"INFO: {outliers.sum()} valeurs aberrantes détectées et signalées dans '{column}'.")
-                elif outlier_strategy == 'remove':
+                elif outlier_strategy == 'supprimer':
                     cleaned_df = cleaned_df[~outliers]
                     cleaning_log.append(f"IMPORTANT: {outliers.sum()} lignes contenant des valeurs aberrantes pour '{column}' ont été supprimées.")
-                elif outlier_strategy == 'cap':
+                elif outlier_strategy == 'plafonner':
                     cleaned_df[column] = np.where(cleaned_df[column] < lower_bound, lower_bound, cleaned_df[column])
                     cleaned_df[column] = np.where(cleaned_df[column] > upper_bound, upper_bound, cleaned_df[column])
                     cleaning_log.append(f"INFO: {outliers.sum()} valeurs aberrantes pour '{column}' ont été plafonnées (winsorized).")
 
     # --- 8. Gestion des Valeurs Manquantes (Imputation) ---
-    if missing_value_strategy != 'none':
+    if missing_value_strategy != 'aucune':
         for column in cleaned_df.columns:
             if cleaned_df[column].isnull().sum() > 0:
-                if missing_value_strategy == 'remove_row':
+                if missing_value_strategy == 'supprimer_lignes':
                     cleaned_df.dropna(subset=[column], inplace=True)
                     cleaning_log.append(f"INFO: Lignes avec valeurs manquantes pour '{column}' supprimées.")
-                elif missing_value_strategy == 'auto':
+                elif missing_value_strategy == 'imputation_auto':
                     dtype = cleaned_df[column].dtype
                     if pd.api.types.is_numeric_dtype(dtype):
                         # La médiane est plus robuste aux outliers que la moyenne 
